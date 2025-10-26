@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import SwipeableViews from "react-swipeable-views";
 import HomePage from "../../pages/HomePage";
 import AllItemsPage from "../../pages/AllItemsPage";
@@ -8,17 +9,33 @@ import LoginButton from "../../features/auth/LoginButton";
 import FamilySelector from "../../features/family/FamilySelector";
 
 const MainLayout = () => {
-  const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const tabs = [
-    { name: "Home", icon: "🏠" },
-    { name: "All", icon: "📋" },
-    { name: "New", icon: "➕" },
-    { name: "Settings", icon: "⚙️" },
+    { name: "Home", icon: "🏠", path: "/" },
+    { name: "All", icon: "📋", path: "/all" },
+    { name: "New", icon: "➕", path: "/new" },
+    { name: "Settings", icon: "⚙️", path: "/family/settings" },
   ];
+
+  // Determine active tab from URL
+  const getTabIndexFromPath = (pathname) => {
+    const index = tabs.findIndex(tab => tab.path === pathname);
+    return index >= 0 ? index : 0;
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabIndexFromPath(location.pathname));
+
+  // Sync tab with URL changes
+  useEffect(() => {
+    const newIndex = getTabIndexFromPath(location.pathname);
+    setActiveTab(newIndex);
+  }, [location.pathname]);
 
   const handleTabChange = (index) => {
     setActiveTab(index);
+    navigate(tabs[index].path);
   };
 
   return (

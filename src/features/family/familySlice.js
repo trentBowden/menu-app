@@ -263,6 +263,18 @@ export const updateFamilyPin = createAsyncThunk(
   }
 );
 
+export const updateFamilyCalendar = createAsyncThunk(
+  "family/updateFamilyCalendar",
+  async ({ familyId, calendarId }, { rejectWithValue }) => {
+    try {
+      await set(ref(rtdb, `families/${familyId}/calendarId`), calendarId || null);
+      return { familyId, calendarId };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const familySlice = createSlice({
   name: "family",
   initialState,
@@ -339,6 +351,10 @@ export const selectIsAdmin = (state) => {
     return false;
   }
   return state.family.families[currentFamilyId].isAdmin;
+};
+
+export const selectFamilyCalendarId = (state) => {
+  return state.family.familyDetails?.calendarId || null;
 };
 
 export const { setCurrentFamily, setFamilies, setFamilyDetails, clearFamilyState } = familySlice.actions;

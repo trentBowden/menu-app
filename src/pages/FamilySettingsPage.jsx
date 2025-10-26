@@ -8,6 +8,7 @@ import {
   loadFamilyDetails,
   removeFamilyMember,
   updateFamilyPin,
+  updateFamilyCalendar,
 } from "../features/family/familySlice";
 import { selectUser } from "../features/auth/authSlice";
 
@@ -21,6 +22,8 @@ export default function FamilySettingsPage() {
   const [newPin, setNewPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [showPinChange, setShowPinChange] = useState(false);
+  const [calendarId, setCalendarId] = useState("");
+  const [showCalendarChange, setShowCalendarChange] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -29,6 +32,12 @@ export default function FamilySettingsPage() {
       dispatch(loadFamilyDetails(currentFamilyId));
     }
   }, [currentFamilyId, dispatch]);
+
+  useEffect(() => {
+    if (familyDetails?.calendarId) {
+      setCalendarId(familyDetails.calendarId);
+    }
+  }, [familyDetails]);
 
   if (!currentFamilyId) {
     return (
@@ -97,6 +106,30 @@ export default function FamilySettingsPage() {
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setError(err || "Failed to update PIN");
+    }
+  };
+
+  const handleUpdateCalendar = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    try {
+      await dispatch(
+        updateFamilyCalendar({
+          familyId: currentFamilyId,
+          calendarId: calendarId.trim() || null,
+        })
+      ).unwrap();
+      setSuccess(
+        calendarId.trim()
+          ? "Calendar linked successfully"
+          : "Calendar unlinked successfully"
+      );
+      setShowCalendarChange(false);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setError(err || "Failed to update calendar");
     }
   };
 
@@ -173,69 +206,166 @@ export default function FamilySettingsPage() {
               Admin Controls
             </h2>
 
-            {/* Change PIN */}
-            {!showPinChange ? (
-              <button
-                onClick={() => setShowPinChange(true)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Change Family PIN
-              </button>
-            ) : (
-              <form onSubmit={handleUpdatePin} className="space-y-4">
-                <h3 className="font-semibold text-gray-900">Change PIN</h3>
+            {/* Calendar Settings */}
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-2">
+                📅 Google Calendar Integration
+              </h3>
+              {familyDetails.calendarId && !showCalendarChange ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New 4-Digit PIN
-                  </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="\d{4}"
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value.slice(0, 4))}
-                    placeholder="••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
-                    maxLength={4}
-                  />
+                  <p className="text-sm text-gray-600 mb-3">
+                    Calendar is linked. Family members can view upcoming meals.
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowCalendarChange(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Update Calendar
+                    </button>
+                  </div>
                 </div>
+              ) : !showCalendarChange ? (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm New PIN
-                  </label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="\d{4}"
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value.slice(0, 4))}
-                    placeholder="••••"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
-                    maxLength={4}
-                  />
-                </div>
-                <div className="flex gap-2">
+                  <p className="text-sm text-gray-600 mb-3">
+                    No calendar linked yet. Link a Google Calendar to show
+                    upcoming meals to your family.
+                  </p>
                   <button
-                    type="button"
-                    onClick={() => {
-                      setShowPinChange(false);
-                      setNewPin("");
-                      setConfirmPin("");
-                      setError("");
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
+                    onClick={() => setShowCalendarChange(true)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Update PIN
+                    Link Calendar
                   </button>
                 </div>
-              </form>
-            )}
+              ) : (
+                <form onSubmit={handleUpdateCalendar} className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-sm space-y-2">
+                    <p className="font-medium text-gray-900">
+                      How to link your Google Calendar:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                      <li>Open Google Calendar on your computer</li>
+                      <li>Create a new calendar or use an existing one</li>
+                      <li>Click Settings (gear icon) → Settings</li>
+                      <li>Select your calendar from the left sidebar</li>
+                      <li className="font-semibold text-blue-900">
+                        Under "Access permissions", check "Make available to public" ⚠️
+                      </li>
+                      <li className="font-semibold text-blue-900">
+                        Ensure "See all event details" is selected ⚠️
+                      </li>
+                      <li>Scroll to "Integrate calendar" section</li>
+                      <li>Copy the "Calendar ID" (looks like an email)</li>
+                      <li>Paste the Calendar ID below and save</li>
+                    </ol>
+                    <p className="text-xs text-gray-600 mt-2 italic">
+                      Note: The calendar MUST be public for the app to access it.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Google Calendar ID
+                    </label>
+                    <input
+                      type="text"
+                      value={calendarId}
+                      onChange={(e) => setCalendarId(e.target.value)}
+                      placeholder="example@group.calendar.google.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Leave empty to unlink the calendar
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCalendarChange(false);
+                        setCalendarId(familyDetails.calendarId || "");
+                        setError("");
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {calendarId.trim() ? "Save Calendar" : "Unlink Calendar"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Change PIN */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">🔐 Family PIN</h3>
+              {!showPinChange ? (
+                <button
+                  onClick={() => setShowPinChange(true)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Change Family PIN
+                </button>
+              ) : (
+                <form onSubmit={handleUpdatePin} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      New 4-Digit PIN
+                    </label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      pattern="\d{4}"
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value.slice(0, 4))}
+                      placeholder="••••"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm New PIN
+                    </label>
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      pattern="\d{4}"
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value.slice(0, 4))}
+                      placeholder="••••"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
+                      maxLength={4}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPinChange(false);
+                        setNewPin("");
+                        setConfirmPin("");
+                        setError("");
+                      }}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Update PIN
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
 

@@ -10,8 +10,11 @@ const initialState = {
 // Thunks
 export const fetchUpcomingMeals = createAsyncThunk(
   "calendar/fetchUpcomingMeals",
-  async () => {
-    const events = await fetchCalendarEvents();
+  async (calendarId) => {
+    if (!calendarId) {
+      return [];
+    }
+    const events = await fetchCalendarEvents(calendarId);
     return events;
   }
 );

@@ -5,7 +5,7 @@ import { selectAuthStatus, selectIsAuthenticated, selectUser } from "./features/
 import { listenForMenuItems } from "./features/menu/menuSlice";
 import { listenForRestaurants } from "./features/restaurants/restaurantSlice";
 import { fetchUpcomingMeals } from "./features/calendar/calendarSlice";
-import { loadUserFamilies, selectCurrentFamilyId, selectFamilyStatus } from "./features/family/familySlice";
+import { loadUserFamilies, loadFamilyDetails, selectCurrentFamilyId, selectFamilyStatus, selectFamilyCalendarId } from "./features/family/familySlice";
 import MainLayout from "./components/layout/MainLayout";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import LoginButton from "./features/auth/LoginButton";
@@ -18,6 +18,7 @@ function App() {
   const user = useSelector(selectUser);
   const currentFamilyId = useSelector(selectCurrentFamilyId);
   const familyStatus = useSelector(selectFamilyStatus);
+  const calendarId = useSelector(selectFamilyCalendarId);
   const [familiesLoaded, setFamiliesLoaded] = useState(false);
 
   // Debug logging
@@ -37,14 +38,24 @@ function App() {
     }
   }, [isAuthenticated, user, dispatch]);
 
+  // Load family details when family changes
+  useEffect(() => {
+    if (isAuthenticated && currentFamilyId) {
+      dispatch(loadFamilyDetails(currentFamilyId));
+    }
+  }, [isAuthenticated, currentFamilyId, dispatch]);
+
   // Load data when authenticated and has a family
   useEffect(() => {
     if (isAuthenticated && currentFamilyId) {
       dispatch(listenForMenuItems());
       dispatch(listenForRestaurants());
-      dispatch(fetchUpcomingMeals());
+      // Only fetch calendar events if calendar is linked
+      if (calendarId) {
+        dispatch(fetchUpcomingMeals(calendarId));
+      }
     }
-  }, [isAuthenticated, currentFamilyId, dispatch]);
+  }, [isAuthenticated, currentFamilyId, calendarId, dispatch]);
 
   // Show loading spinner while checking auth status or loading families
   if (authStatus === "loading" || (isAuthenticated && !familiesLoaded)) {

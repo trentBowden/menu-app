@@ -1,12 +1,18 @@
 import { useSelector } from "react-redux";
-import { selectUpcomingMeals } from "./calendarSlice";
+import { useNavigate } from "react-router-dom";
+import { selectUpcomingMeals, selectCalendarStatus } from "./calendarSlice";
 import { selectMenuItemById } from "../menu/menuSlice";
+import { selectIsAdmin, selectFamilyDetails } from "../family/familySlice";
 import MenuItemCard from "../menu/MenuItemCard";
 import { useState } from "react";
 import MenuItemDetailModal from "../menu/MenuItemDetailModal";
 
 const UpcomingMeals = () => {
+  const navigate = useNavigate();
   const upcomingMeals = useSelector(selectUpcomingMeals);
+  const calendarStatus = useSelector(selectCalendarStatus);
+  const isAdmin = useSelector(selectIsAdmin);
+  const familyDetails = useSelector(selectFamilyDetails);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const handleCardClick = (item) => {
@@ -17,6 +23,100 @@ const UpcomingMeals = () => {
     setSelectedItem(null);
   };
 
+  const hasCalendar = familyDetails?.calendarId;
+
+  // Empty state when no calendar is linked
+  if (!hasCalendar) {
+    if (isAdmin) {
+      return (
+        <div className="p-6 bg-blue-50 rounded-lg m-4">
+          <div className="text-center">
+            <div className="text-4xl mb-3">📅</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Calendar Linked
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Link a Google Calendar to show upcoming meals to your family.
+            </p>
+            <button
+              onClick={() => navigate("/family/settings")}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Set Up Calendar
+            </button>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="p-6 bg-gray-50 rounded-lg m-4">
+          <div className="text-center">
+            <div className="text-4xl mb-3">📅</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No Calendar Linked
+            </h3>
+            <p className="text-sm text-gray-600">
+              Ask your family admin to link a Google Calendar to see upcoming
+              meals here.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Error state - calendar is linked but can't be accessed
+  if (hasCalendar && calendarStatus === "failed") {
+    if (isAdmin) {
+      return (
+        <div className="p-6 bg-red-50 rounded-lg m-4 border border-red-200">
+          <div className="text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Cannot Access Calendar
+            </h3>
+            <p className="text-sm text-gray-700 mb-4">
+              The linked calendar is not accessible. This usually means the
+              calendar is not set to public.
+            </p>
+            <div className="bg-white p-4 rounded border border-red-300 text-left mb-4 text-sm">
+              <p className="font-medium mb-2">To fix this:</p>
+              <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                <li>Open Google Calendar</li>
+                <li>Go to Settings → Your calendar name</li>
+                <li>Under "Access permissions", check "Make available to public"</li>
+                <li>Ensure "See all event details" is selected</li>
+                <li>Click "Save" and try again here</li>
+              </ol>
+            </div>
+            <button
+              onClick={() => navigate("/family/settings")}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Update Calendar Settings
+            </button>
+          </div>
+        </div>
+      );
+    } else {
+      return (
+        <div className="p-6 bg-red-50 rounded-lg m-4 border border-red-200">
+          <div className="text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Cannot Access Calendar
+            </h3>
+            <p className="text-sm text-gray-600">
+              The calendar is not accessible. Please ask your family admin to
+              check the calendar permissions.
+            </p>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Empty state when calendar is linked but no meals scheduled
   if (upcomingMeals.length === 0) {
     return (
       <div className="p-4">

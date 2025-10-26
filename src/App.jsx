@@ -1,35 +1,56 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useAuthListener } from "./hooks/useAuthListener";
+import { selectAuthStatus, selectIsAuthenticated } from "./features/auth/authSlice";
+import { listenForMenuItems } from "./features/menu/menuSlice";
+import { listenForRestaurants } from "./features/restaurants/restaurantSlice";
+import { fetchUpcomingMeals } from "./features/calendar/calendarSlice";
+import MainLayout from "./components/layout/MainLayout";
+import LoadingSpinner from "./components/common/LoadingSpinner";
+import LoginButton from "./features/auth/LoginButton";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const dispatch = useDispatch();
+  const authStatus = useSelector(selectAuthStatus);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+  // Debug logging
+  console.log("App render - authStatus:", authStatus, "isAuthenticated:", isAuthenticated);
+
+  // Set up Firebase auth listener
+  useAuthListener();
+
+  // Load data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(listenForMenuItems());
+      dispatch(listenForRestaurants());
+      dispatch(fetchUpcomingMeals());
+    }
+  }, [isAuthenticated, dispatch]);
+
+  // Show loading spinner while checking auth status
+  if (authStatus === "loading") {
+    return <LoadingSpinner fullPage size="large" />;
+  }
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 flex flex-col items-center justify-center p-4">
+        <div className="text-center mb-8">
+          <h1 className="text-5xl font-bold text-gray-900 mb-4">🌺 Hula Eats</h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Your family meal planning companion
+          </p>
+        </div>
+        <LoginButton />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    );
+  }
+
+  // Show main app when authenticated
+  return <MainLayout />;
 }
 
-export default App
+export default App;

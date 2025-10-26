@@ -11,9 +11,17 @@ const initialState = {
 // Thunks
 export const listenForRestaurants = createAsyncThunk(
   "restaurants/listenForRestaurants",
-  async (_, { dispatch }) => {
+  async (_, { dispatch, getState }) => {
+    const { family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      console.warn("No family selected, skipping restaurants load");
+      return;
+    }
+
     return new Promise((resolve) => {
-      dbOnValue("restaurants", (snapshot) => {
+      dbOnValue(`families/${familyId}/restaurants`, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           const restaurantsById = {};
@@ -36,13 +44,22 @@ export const listenForRestaurants = createAsyncThunk(
 
 export const createRestaurant = createAsyncThunk(
   "restaurants/createRestaurant",
-  async (restaurantData) => {
+  async (restaurantData, { getState }) => {
+    const { family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      throw new Error("No family selected");
+    }
+
     const newRestaurant = {
       ...restaurantData,
+      familyId,
       menuItemIds: restaurantData.menuItemIds || [],
+      createdAt: Date.now(),
     };
     
-    const result = await dbPush("restaurants", newRestaurant);
+    const result = await dbPush(`families/${familyId}/restaurants`, newRestaurant);
     return { id: result.key, ...newRestaurant };
   }
 );

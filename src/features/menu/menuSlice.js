@@ -11,9 +11,17 @@ const initialState = {
 // Thunks
 export const listenForMenuItems = createAsyncThunk(
   "menu/listenForMenuItems",
-  async (_, { dispatch }) => {
+  async (_, { dispatch, getState }) => {
+    const { family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      console.warn("No family selected, skipping menu items load");
+      return;
+    }
+
     return new Promise((resolve) => {
-      dbOnValue("menuItems", (snapshot) => {
+      dbOnValue(`families/${familyId}/menuItems`, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           const itemsById = {};
@@ -37,23 +45,37 @@ export const listenForMenuItems = createAsyncThunk(
 export const createMenuItem = createAsyncThunk(
   "menu/createMenuItem",
   async (itemData, { getState }) => {
-    const { auth } = getState();
+    const { auth, family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      throw new Error("No family selected");
+    }
+
     const newItem = {
       ...itemData,
       createdBy: auth.user?.uid || "anonymous",
+      familyId,
       responses: [],
+      createdAt: Date.now(),
     };
     
-    const result = await dbPush("menuItems", newItem);
+    const result = await dbPush(`families/${familyId}/menuItems`, newItem);
     return { id: result.key, ...newItem };
   }
 );
 
 export const updateMenuItemLink = createAsyncThunk(
   "menu/updateMenuItemLink",
-  async ({ itemId, recipeIndex, linkType, newUrl }) => {
-    const path = `menuItems/${itemId}/recipes/${recipeIndex}/${linkType}`;
-    await dbUpdate(`menuItems/${itemId}`, {
+  async ({ itemId, recipeIndex, linkType, newUrl }, { getState }) => {
+    const { family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      throw new Error("No family selected");
+    }
+
+    await dbUpdate(`families/${familyId}/menuItems/${itemId}`, {
       [`recipes/${recipeIndex}/${linkType}`]: newUrl,
     });
     return { itemId, recipeIndex, linkType, newUrl };
@@ -69,11 +91,17 @@ export const addResponseToItem = createAsyncThunk(
       timestamp: Date.now(),
     };
     
-    const { menu } = getState();
+    const { menu, family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      throw new Error("No family selected");
+    }
+
     const item = menu.itemsById[itemId];
     const responses = item?.responses || [];
     
-    await dbUpdate(`menuItems/${itemId}`, {
+    await dbUpdate(`families/${familyId}/menuItems/${itemId}`, {
       responses: [...responses, response],
     });
     

@@ -4,19 +4,19 @@ import SwipeableViews from "react-swipeable-views";
 import HomePage from "../../pages/HomePage";
 import AllItemsPage from "../../pages/AllItemsPage";
 import NewItemPage from "../../pages/NewItemPage";
-import FamilySettingsPage from "../../pages/FamilySettingsPage";
-import LoginButton from "../../features/auth/LoginButton";
+import UserMenu from "../common/UserMenu";
+import SettingsModal from "../common/SettingsModal";
 import FamilySelector from "../../features/family/FamilySelector";
 
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const tabs = [
     { name: "Home", icon: "🏠", path: "/" },
     { name: "All", icon: "📋", path: "/all" },
     { name: "New", icon: "➕", path: "/new" },
-    { name: "Settings", icon: "⚙️", path: "/family/settings" },
   ];
 
   // Determine active tab from URL
@@ -46,7 +46,7 @@ const MainLayout = () => {
           <h1 className="text-2xl font-bold text-gray-900">🌺 Hula Eats</h1>
           <div className="flex items-center gap-3">
             <FamilySelector />
-            <LoginButton />
+            <UserMenu onOpenSettings={() => setIsSettingsOpen(true)} />
           </div>
         </div>
 
@@ -79,7 +79,7 @@ const MainLayout = () => {
           className="h-full"
         >
           <div className="overflow-y-auto h-full">
-            <HomePage />
+            <HomePage onOpenSettings={() => setIsSettingsOpen(true)} />
           </div>
           <div className="overflow-y-auto h-full">
             <AllItemsPage />
@@ -87,11 +87,11 @@ const MainLayout = () => {
           <div className="overflow-y-auto h-full">
             <NewItemPage />
           </div>
-          <div className="overflow-y-auto h-full">
-            <FamilySettingsPage />
-          </div>
         </SwipeableViews>
       </div>
+
+      {/* Settings Modal */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );
 };

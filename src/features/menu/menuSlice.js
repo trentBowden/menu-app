@@ -85,13 +85,17 @@ export const updateMenuItemLink = createAsyncThunk(
 export const addResponseToItem = createAsyncThunk(
   "menu/addResponseToItem",
   async ({ userId, itemId, responseType }, { getState }) => {
+    const { menu, family, auth } = getState();
+    const user = auth.user;
+    
     const response = {
       userId,
       type: responseType,
       timestamp: Date.now(),
+      userName: user?.displayName || "Unknown User",
+      userPhotoURL: user?.photoURL || null,
     };
     
-    const { menu, family } = getState();
     const familyId = family.currentFamilyId;
     
     if (!familyId) {
@@ -106,6 +110,30 @@ export const addResponseToItem = createAsyncThunk(
     });
     
     return { itemId, response };
+  }
+);
+
+export const clearResponseFromItem = createAsyncThunk(
+  "menu/clearResponseFromItem",
+  async ({ userId, itemId }, { getState }) => {
+    const { menu, family } = getState();
+    const familyId = family.currentFamilyId;
+    
+    if (!familyId) {
+      throw new Error("No family selected");
+    }
+
+    const item = menu.itemsById[itemId];
+    const responses = item?.responses || [];
+    
+    // Filter out all responses from this user
+    const updatedResponses = responses.filter(r => r.userId !== userId);
+    
+    await dbUpdate(`families/${familyId}/menuItems/${itemId}`, {
+      responses: updatedResponses,
+    });
+    
+    return { itemId, userId };
   }
 );
 
@@ -131,11 +159,8 @@ const menuSlice = createSlice({
         state.status = "failed";
         state.error = action.error.message;
       })
-      .addCase(createMenuItem.fulfilled, (state, action) => {
-        const item = action.payload;
-        state.itemsById[item.id] = item;
-        state.allItemIds.push(item.id);
-      })
+      // Note: We don't optimistically add items on createMenuItem.fulfilled
+      // because the Firebase listener will automatically pick up the new item
       .addCase(updateMenuItemLink.fulfilled, (state, action) => {
         const { itemId, recipeIndex, linkType, newUrl } = action.payload;
         if (state.itemsById[itemId]) {
@@ -146,6 +171,14 @@ const menuSlice = createSlice({
         const { itemId, response } = action.payload;
         if (state.itemsById[itemId]) {
           state.itemsById[itemId].responses.push(response);
+        }
+      })
+      .addCase(clearResponseFromItem.fulfilled, (state, action) => {
+        const { itemId, userId } = action.payload;
+        if (state.itemsById[itemId]) {
+          state.itemsById[itemId].responses = state.itemsById[itemId].responses.filter(
+            r => r.userId !== userId
+          );
         }
       });
   },

@@ -10,6 +10,7 @@ import MainLayout from "./components/layout/MainLayout";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import LoginButton from "./features/auth/LoginButton";
 import FamilyOnboarding from "./features/family/FamilyOnboarding";
+import Snackbar from "./components/common/Snackbar";
 
 function App() {
   const dispatch = useDispatch();
@@ -59,31 +60,49 @@ function App() {
 
   // Show loading spinner while checking auth status or loading families
   if (authStatus === "loading" || (isAuthenticated && !familiesLoaded)) {
-    return <LoadingSpinner fullPage size="large" />;
+    return (
+      <>
+        <LoadingSpinner fullPage size="large" />
+        <Snackbar />
+      </>
+    );
   }
 
   // Show login screen if not authenticated
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 flex flex-col items-center justify-center p-4">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">🌺 Hula Eats</h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Your family meal planning companion
-          </p>
+      <>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-pink-50 flex flex-col items-center justify-center p-4">
+          <div className="text-center mb-8">
+            <h1 className="text-5xl font-bold text-gray-900 mb-4">🌺 Hula Eats</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              Your family meal planning companion
+            </p>
+          </div>
+          <LoginButton />
         </div>
-        <LoginButton />
-      </div>
+        <Snackbar />
+      </>
     );
   }
 
   // Show family onboarding if authenticated but no family selected
   if (isAuthenticated && !currentFamilyId) {
-    return <FamilyOnboarding />;
+    return (
+      <>
+        <FamilyOnboarding />
+        <Snackbar />
+      </>
+    );
   }
 
   // Show main app when authenticated and has a family
-  return <MainLayout />;
+  return (
+    <>
+      <MainLayout />
+      <Snackbar />
+    </>
+  );
 }
 
 export default App;

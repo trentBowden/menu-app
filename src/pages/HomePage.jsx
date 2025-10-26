@@ -11,7 +11,7 @@ import MenuItemDetailModal from "../features/menu/MenuItemDetailModal";
 import SkeletonCard from "../components/common/SkeletonCard";
 import { sortItemsByRecentResponses } from "../features/responses/responseLogic";
 
-const HomePage = () => {
+const HomePage = ({ onOpenSettings }) => {
   const dispatch = useDispatch();
   const upcomingMeals = useSelector(selectUpcomingMeals);
   const calendarStatus = useSelector(selectCalendarStatus);
@@ -60,7 +60,7 @@ const HomePage = () => {
             </div>
           </div>
         ) : (
-          <UpcomingMeals />
+          <UpcomingMeals onOpenSettings={onOpenSettings} />
         )}
       </section>
 
@@ -77,6 +77,7 @@ const HomePage = () => {
                     onCardClick={handleCardClick}
                     onQuickCraving={handleQuickCraving}
                     showQuickButton={false}
+                    showActivityDescriptions={true}
                   />
                 </div>
               ))}

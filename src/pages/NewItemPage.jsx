@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { createMenuItem } from "../features/menu/menuSlice";
 import { selectUser } from "../features/auth/authSlice";
+import { showSnackbar } from "../features/notification/snackbarSlice";
 
 const NewItemPage = () => {
   const dispatch = useDispatch();
@@ -49,9 +50,10 @@ const NewItemPage = () => {
 
     setIsSubmitting(true);
     try {
+      const menuItemTitle = title.trim();
       await dispatch(
         createMenuItem({
-          title: title.trim(),
+          title: menuItemTitle,
           recipes: validRecipes,
         })
       ).unwrap();
@@ -62,10 +64,23 @@ const NewItemPage = () => {
         { title: "", originalRecipeLink: "", colesOrderListLink: "", imageURL: "" },
       ]);
       
-      alert("Menu item created successfully!");
+      // Show success snackbar
+      dispatch(showSnackbar({
+        title: "Menu Item Created",
+        subtitle: menuItemTitle,
+        link: {
+          text: "View All Items",
+          url: "/all"
+        },
+        duration: 5000
+      }));
     } catch (error) {
       console.error("Error creating menu item:", error);
-      alert("Failed to create menu item. Please try again.");
+      dispatch(showSnackbar({
+        title: "Error",
+        subtitle: "Failed to create menu item. Please try again.",
+        duration: 5000
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -134,9 +149,19 @@ const NewItemPage = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Recipe Title *
-                  </label>
+                  <div className="flex items-center gap-2 mb-1">
+                    <label className="text-sm font-medium text-gray-600">
+                      Recipe Title *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => updateRecipe(index, "title", title)}
+                      disabled={!title.trim()}
+                      className="text-xs text-blue-600 hover:text-blue-700 disabled:text-gray-400 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                    >
+                      (copy from menu title)
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={recipe.title}

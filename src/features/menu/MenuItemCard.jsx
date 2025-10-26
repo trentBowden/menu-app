@@ -1,8 +1,8 @@
 import { useSelector } from "react-redux";
 import { selectUser } from "../auth/authSlice";
-import { getMostRecentResponse } from "../responses/responseLogic";
+import { getMostRecentResponse, getRecentActivityDescriptions } from "../responses/responseLogic";
 
-const MenuItemCard = ({ menuItem, onCardClick, onQuickCraving, showQuickButton = false }) => {
+const MenuItemCard = ({ menuItem, onCardClick, onQuickCraving, showQuickButton = false, showActivityDescriptions = false }) => {
   const user = useSelector(selectUser);
   const recipes = menuItem.recipes || [];
 
@@ -11,6 +11,9 @@ const MenuItemCard = ({ menuItem, onCardClick, onQuickCraving, showQuickButton =
   const mostRecentUser = mostRecentResponse
     ? { photoURL: mostRecentResponse.userPhotoURL, displayName: mostRecentResponse.userName }
     : null;
+
+  // Get activity descriptions for recent activity
+  const activities = showActivityDescriptions ? getRecentActivityDescriptions(menuItem.responses) : [];
 
   const handleCardClick = (e) => {
     // Don't trigger card click if clicking the craving button
@@ -90,6 +93,17 @@ const MenuItemCard = ({ menuItem, onCardClick, onQuickCraving, showQuickButton =
         <p className="text-sm text-gray-600 line-clamp-1">
           {recipes.length} {recipes.length === 1 ? "recipe" : "recipes"}
         </p>
+
+        {showActivityDescriptions && activities.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {activities.map((activity, index) => (
+              <div key={index} className="flex items-start gap-2 text-sm">
+                <span className="text-base leading-none">{activity.emoji}</span>
+                <span className="text-gray-700 line-clamp-1">{activity.description}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {showQuickButton && (
           <button
